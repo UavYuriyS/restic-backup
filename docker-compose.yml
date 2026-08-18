@@ -1,0 +1,26 @@
+services:
+  restic-backup:
+    build: .
+    environment:
+      # S3-compatible backend (MinIO). Bucket must already exist -
+      # create it once via the MinIO console at :9001 or `mc mb`.
+      RESTIC_REPOSITORY: s3:${MINIO_HOST}/${MINIO_BUCKET}
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD}
+
+      BACKUP_SOURCE: /data
+      BACKUP_TAG: myapp
+      BACKUP_CRON: "0 6 * * *"   # daily at 06:00 container time
+      RUN_ON_START: "true"       # also backup immediately on container start
+      TZ: Europe/Amsterdam
+
+      # Retention policy (optional, comment out to keep everything)
+      RESTIC_KEEP_DAILY: 7
+      RESTIC_KEEP_WEEKLY: 4
+      RESTIC_KEEP_MONTHLY: 6
+    volumes:
+      # <-- change this to the directory you want backed up
+      - ${BACKUP_DIR-./data_to_backup}:/data:ro
+    restart: unless-stopped
+
